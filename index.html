@@ -21,9 +21,9 @@
         textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; height: 200px; margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical; }
         button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; }
         button:hover { background: #1d4ed8; }
-        .btn-report { background: #10b981; margin-top: 10px; } /* Green for Report */
+        .btn-report { background: #10b981; margin-top: 10px; } 
         .btn-report:hover { background: #059669; }
-        .btn-reset { background: #dc2626; margin-top: 10px; } /* Red for Reset */
+        .btn-reset { background: #dc2626; margin-top: 10px; } 
         .btn-reset:hover { background: #b91c1c; }
         #status-msg { font-size: 0.8rem; color: #64748b; margin-bottom: 20px; }
     </style>
@@ -137,19 +137,23 @@
             });
     }
 
-    // NEW: Function to submit a final report
+    // Weekly Report Function including Name and Section
     function submitWeeklyReport() {
-        const userName = prompt("Enter your name for the report:");
+        const userName = prompt("Enter your Name:");
         if (!userName) return;
+
+        const sectionName = prompt("Enter the Section (e.g., Design, R&D):");
+        if (!sectionName) return;
 
         const reportData = {
             submittedBy: userName,
+            section: sectionName,
             timestamp: new Date().toLocaleString(),
-            dataAtSubmission: startupData
+            dataSnapshot: startupData[currentKey] || "No current section data"
         };
 
-        db.ref('projectReports').push(reportData)
-            .then(() => alert("Weekly Project Report submitted successfully!"))
+        db.ref('weeklyReports').push(reportData)
+            .then(() => alert("Report for " + sectionName + " submitted successfully!"))
             .catch(err => alert("Submission failed: " + err.message));
     }
 
