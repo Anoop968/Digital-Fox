@@ -21,7 +21,8 @@
         textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; height: 200px; margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical; }
         button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; }
         button:hover { background: #1d4ed8; }
-        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-reset { background: #dc2626; margin-top: 20px; }
+        .btn-reset:hover { background: #b91c1c; }
         #status-msg { font-size: 0.8rem; color: #64748b; margin-bottom: 20px; }
     </style>
 </head>
@@ -37,6 +38,7 @@
         <li onclick="changeTab('funding')" id="nav-funding">Finance & Funding</li>
         <li onclick="changeTab('presentation')" id="nav-presentation">Presentation</li>
     </ul>
+    <button class="btn-reset" onclick="resetAllData()">🗑️ Reset Weekly Data</button>
 </nav>
 
 <main>
@@ -58,11 +60,15 @@
 </main>
 
 <script>
-    // Your verified Firebase Config
+    // FIX 1: Variables declared at the top to avoid ReferenceErrors
+    let currentKey = 'planning';
+    let startupData = {};
+
+    // FIX 2: Correct API databaseURL (Not the browser link)
     const firebaseConfig = {
         apiKey: "AIzaSyCHPE9iOu1DZpKD8JjGK7o1pskZhFeqekM",
         authDomain: "digital-fox-79c5c.firebaseapp.com",
-        databaseURL: "https://console.firebase.google.com/project/digital-fox-79c5c/database/digital-fox-79c5c-default-rtdb/data/~2F",
+        databaseURL: "https://digital-fox-79c5c-default-rtdb.firebaseio.com", 
         projectId: "digital-fox-79c5c",
         storageBucket: "digital-fox-79c5c.firebasestorage.app",
         messagingSenderId: "1024069589964",
@@ -71,17 +77,13 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    let currentKey = 'planning';
-    let startupData = {};
 
-    // Initial Load
     function changeTab(key) {
         currentKey = key;
         document.querySelectorAll('nav li').forEach(el => el.classList.remove('active-nav'));
-        document.getElementById('nav-' + key).classList.add('active-nav');
+        const activeItem = document.getElementById('nav-' + key);
+        if(activeItem) activeItem.classList.add('active-nav');
         
-        // Update Title
         const titles = {
             planning: "Strategic Planning",
             legal: "Legal & Compliance",
@@ -91,12 +93,9 @@
             presentation: "Presentation"
         };
         document.getElementById('section-title').innerText = titles[key];
-        
-        // Load data from our local variable (filled by Firebase)
         loadSectionData();
     }
 
-    // Pull from Cloud (Listen for changes)
     db.ref('startupData').on('value', (snapshot) => {
         startupData = snapshot.val() || {};
         document.getElementById('status-msg').innerText = "Cloud Synced at " + new Date().toLocaleTimeString();
@@ -105,14 +104,11 @@
 
     function loadSectionData() {
         const data = startupData[currentKey] || { members: "", plan: "" };
+        const mInput = document.getElementById('members-input');
+        const pInput = document.getElementById('plan-input');
         
-        // We only update if the user isn't currently typing (to avoid cursor jumping)
-        if (document.activeElement !== document.getElementById('members-input')) {
-            document.getElementById('members-input').value = data.members || "";
-        }
-        if (document.activeElement !== document.getElementById('plan-input')) {
-            document.getElementById('plan-input').value = data.plan || "";
-        }
+        if (document.activeElement !== mInput) mInput.value = data.members || "";
+        if (document.activeElement !== pInput) pInput.value = data.plan || "";
     }
 
     function handleSave(field) {
@@ -138,10 +134,16 @@
             });
     }
 
-    // Initialize the first tab
+    function resetAllData() {
+        if (confirm("Wipe all data for all 9 members?")) {
+            db.ref('startupData').remove()
+            .then(() => alert("Dashboard Cleared"))
+            .catch(err => alert("Error: " + err.message));
+        }
+    }
+
+    // Initialize
     changeTab('planning');
 </script>
 </body>
 </html>
-
-
