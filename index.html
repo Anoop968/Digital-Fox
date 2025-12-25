@@ -3,31 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Fox OS | Live Sync</title>
+    <title>Digital Fox Engine</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --accent: #0ea5e9; --export: #16a34a; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; }
-        nav { width: 280px; background: #0f172a; color: white; height: 100vh; padding: 25px; position: fixed; box-sizing: border-box; }
-        nav h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 15px; }
+        nav { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 20px; position: fixed; }
+        nav h2 { color: #0ea5e9; font-size: 1.2rem; margin-bottom: 30px; }
         nav ul { list-style: none; padding: 0; }
-        nav li { padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 8px; transition: 0.2s; font-size: 0.95rem; }
-        .active-nav { background: var(--primary) !important; font-weight: 600; }
-        main { margin-left: 280px; padding: 50px; width: calc(100% - 280px); box-sizing: border-box; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
-        .card { background: var(--card); padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); position: relative;}
-        .progress-container { background: #e2e8f0; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--primary); transition: width 0.5s; width: 0%; }
-        textarea, select, input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #f1f5f9; border-radius: 10px; font-size: 1rem; }
-        button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; }
-        .report-item { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid var(--primary); border: 1px solid #eee; }
+        nav li { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
+        .active-nav { background: var(--primary); }
+        main { margin-left: 260px; padding: 40px; width: 100%; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; height: 150px; margin-bottom: 15px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <nav>
-    <h2>Digital Fox Engine</h2>
+    <h2>DIGITAL FOX ENGINE</h2>
     <ul id="menu">
         <li onclick="showSection('planning')" id="nav-planning">Strategic Planning</li>
         <li onclick="showSection('legal')" id="nav-legal">Legal & Compliance</li>
@@ -35,19 +32,16 @@
         <li onclick="showSection('design')" id="nav-design">Product Design</li>
         <li onclick="showSection('funding')" id="nav-funding">Finance & Funding</li>
         <li onclick="showSection('presentation')" id="nav-presentation">Presentation</li>
-        <hr style="border: 0.5px solid #1e293b; margin: 20px 0;">
-        <li onclick="showSection('reports')" id="nav-reports">📝 Submit Report</li>
-        <li onclick="showSection('history')" id="nav-history">📊 Live History</li>
     </ul>
 </nav>
 
 <main>
-    <h1 id="section-title">Connecting to Digital Fox Cloud...</h1>
+    <h1 id="section-title">Loading...</h1>
     <div id="active-section" class="grid"></div>
 </main>
 
 <script>
-    // YOUR UNIQUE FIREBASE CONFIG (INTEGRATED)
+    // YOUR CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyCHPE9iOu1DZpKD8JjGK7o1pskZhFeqekM",
         authDomain: "digital-fox-79c5c.firebaseapp.com",
@@ -58,80 +52,48 @@
         appId: "1:1024069589964:web:dd5f35c584a64f148b9b69"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let startupData = {};
 
-    // Live Sync: Pull data from Firebase
+    // Pull from Cloud
     db.ref('startupData').on('value', (snapshot) => {
         startupData = snapshot.val() || {
-            planning: { title: "Strategic Planning", members: "", plan: "", progress: 0, status: "To-Do" },
-            legal: { title: "Legal & Compliance", members: "", plan: "", progress: 0, status: "To-Do" },
-            rnd: { title: "R&D Exploration", members: "", plan: "", progress: 0, status: "To-Do" },
-            design: { title: "Product Design", members: "", plan: "", progress: 0, status: "To-Do" },
-            funding: { title: "Finance & Funding", members: "", plan: "", progress: 0, status: "To-Do" },
-            presentation: { title: "Presentation", members: "", plan: "", progress: 0, status: "To-Do" },
-            reports: []
+            planning: { title: "Goals & Planning Rules", members: "", plan: "" },
+            legal: { title: "Legal & Compliance", members: "", plan: "" },
+            rnd: { title: "R&D Exploration", members: "", plan: "" },
+            design: { title: "Product Design", members: "", plan: "" },
+            funding: { title: "Finance & Funding", members: "", plan: "" },
+            presentation: { title: "Presentation", members: "", plan: "" }
         };
-        const currentTab = document.querySelector('.active-nav')?.id.replace('nav-', '') || 'planning';
-        showSection(currentTab);
+        const current = document.querySelector('.active-nav')?.id.split('-')[1] || 'planning';
+        showSection(current);
     });
 
     function showSection(key) {
         document.querySelectorAll('nav li').forEach(el => el.classList.remove('active-nav'));
         document.getElementById('nav-' + key)?.classList.add('active-nav');
-        const container = document.getElementById('active-section');
-        const section = startupData[key];
         
-        document.getElementById('section-title').innerText = section ? section.title : "Dashboard";
-
-        if(key === 'reports') {
-            container.innerHTML = `<div class="card" style="grid-column: 1/-1">
-                <label>Member Name</label><input type="text" id="rep-name">
-                <label>Block</label><select id="rep-block"><option>Planning</option><option>Legal</option><option>R&D</option><option>Design</option></select>
-                <label>Work Summary</label><textarea id="rep-text" rows="5"></textarea>
-                <button onclick="saveReport()">Sync Report to Team</button></div>`;
-            return;
-        }
-
-        if(key === 'history') {
-            let reports = startupData.reports || [];
-            let html = reports.map(r => `<div class="report-item"><b>${r.name}</b> (${r.block})<br>${r.content}<div style="font-size:0.7rem; color:gray">${r.date}</div></div>`).join('');
-            container.innerHTML = `<div style="grid-column: 1/-1">${html}</div>`;
-            return;
-        }
-
-        container.innerHTML = `
+        const section = startupData[key];
+        document.getElementById('section-title').innerText = section.title;
+        
+        document.getElementById('active-section').innerHTML = `
             <div class="card">
-                <label>Overall Progress: ${section.progress}%</label>
-                <div class="progress-container"><div class="progress-bar" style="width:${section.progress}%"></div></div>
-                <input type="range" value="${section.progress}" onchange="db.ref('startupData/${key}/progress').set(this.value)">
+                <h3>TEAM MEMBERS</h3>
+                <textarea id="m-${key}">${section.members}</textarea>
+                <button onclick="saveData('${key}', 'members')">Save Members</button>
             </div>
             <div class="card">
-                <label>Assigned Members</label><textarea id="m-${key}">${section.members}</textarea>
-                <label>Weekly Plan</label><textarea id="p-${key}" rows="5">${section.plan}</textarea>
-                <button onclick="saveBlock('${key}')">Update for All 9 Members</button>
+                <h3>WEEKLY SPRINT GOALS</h3>
+                <textarea id="p-${key}">${section.plan}</textarea>
+                <button onclick="saveData('${key}', 'plan')">Save Plan</button>
             </div>`;
     }
 
-    function saveBlock(key) {
-        const members = document.getElementById('m-'+key).value;
-        const plan = document.getElementById('p-'+key).value;
-        db.ref('startupData/' + key).update({ members, plan });
+    function saveData(key, field) {
+        const val = document.getElementById((field === 'members' ? 'm-' : 'p-') + key).value;
+        db.ref('startupData/' + key + '/' + field).set(val);
         alert("Synced to Cloud!");
-    }
-
-    function saveReport() {
-        const name = document.getElementById('rep-name').value;
-        const block = document.getElementById('rep-block').value;
-        const content = document.getElementById('rep-text').value;
-        if(!name || !content) return alert("Please fill fields");
-        let reports = startupData.reports || [];
-        reports.unshift({ name, block, content, date: new Date().toLocaleString() });
-        db.ref('startupData/reports').set(reports);
-        showSection('history');
     }
 </script>
 </body>
