@@ -27,7 +27,7 @@
         .btn-reset { background: #dc2626; margin-top: 10px; } 
         .btn-reset:hover { background: #b91c1c; }
         #status-msg { font-size: 0.8rem; color: #64748b; margin-bottom: 20px; }
-        #file-input { display: none; } /* Hidden file input */
+        #file-input { display: none; } 
     </style>
 </head>
 <body>
@@ -44,7 +44,7 @@
     </ul>
     
     <input type="file" id="file-input" accept="application/pdf">
-    <button class="btn-report" onclick="document.getElementById('file-input').click()">📁 Attach & Submit PDF</button>
+    <button class="btn-report" onclick="document.getElementById('file-input').click()">📁 Attach & Submit PDF Report</button>
     
     <button class="btn-reset" onclick="resetAllData()">🗑️ Reset Weekly Data</button>
 </nav>
@@ -83,9 +83,9 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const storage = firebase.storage(); // Initialize Storage
+    const storage = firebase.storage(); 
 
-    // Listen for file selection
+    // Trigger submission when file is selected
     document.getElementById('file-input').onchange = e => {
         const file = e.target.files[0];
         if (file) submitWeeklyReport(file);
@@ -147,35 +147,36 @@
             });
     }
 
-    // Weekly Report Function with PDF Upload
+    // Submission function with Name, Section, and PDF handling
     function submitWeeklyReport(file) {
         const userName = prompt("Enter your Name:");
         if (!userName) return;
 
-        const sectionName = prompt("Enter the Section (e.g., Design, R&D):");
+        const sectionName = prompt("Enter the Section (e.g., Design, Finance):");
         if (!sectionName) return;
 
-        alert("Uploading PDF... Please wait.");
+        alert("Uploading Report... This may take a moment.");
 
-        // 1. Upload file to Firebase Storage
-        const storageRef = storage.ref(`reports/${Date.now()}_${file.name}`);
-        storageRef.put(file).then(snapshot => {
+        // 1. Upload PDF to Storage
+        const fileRef = storage.ref(`project_reports/${Date.now()}_${file.name}`);
+        
+        fileRef.put(file).then(snapshot => {
             return snapshot.ref.getDownloadURL();
-        }).then(downloadURL => {
-            // 2. Save metadata and URL to Database
+        }).then(url => {
+            // 2. Link PDF URL to Database entry
             const reportData = {
-                submittedBy: userName,
+                userName: userName,
                 section: sectionName,
-                timestamp: new Date().toLocaleString(),
-                pdfUrl: downloadURL
+                pdfUrl: url,
+                timestamp: new Date().toLocaleString()
             };
-
             return db.ref('weeklyReports').push(reportData);
         }).then(() => {
-            alert("PDF Report for " + sectionName + " submitted successfully!");
-            document.getElementById('file-input').value = ""; // Clear input
+            alert("Success! PDF report for " + sectionName + " has been submitted.");
+            document.getElementById('file-input').value = ""; // Reset file selector
         }).catch(err => {
-            alert("Submission failed: " + err.message);
+            alert("Upload failed: " + err.message);
+            console.error(err);
         });
     }
 
