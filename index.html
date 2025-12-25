@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Fox</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --accent: #0ea5e9; --export: #16a34a; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; }
+        
+        /* Sidebar */
+        nav { width: 280px; background: #0f172a; color: white; height: 100vh; padding: 25px; position: fixed; box-sizing: border-box; }
+        nav h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 15px; }
+        nav ul { list-style: none; padding: 0; }
+        nav li { padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 8px; transition: all 0.2s ease; font-size: 0.95rem; }
+        nav li:hover { background: #1e293b; padding-left: 20px; }
+        .active-nav { background: var(--primary) !important; font-weight: 600; }
+
+        /* Main Content */
+        main { margin-left: 280px; padding: 50px; width: calc(100% - 280px); box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; }
+        .card { background: var(--card); padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        
+        h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 40px; color: #0f172a; }
+        label { font-weight: 700; display: block; margin-bottom: 10px; font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+        input, textarea, select { width: 100%; padding: 14px; margin-bottom: 25px; border: 2px solid #f1f5f9; border-radius: 10px; font-size: 1rem; background: #f8fafc; transition: 0.2s; }
+        input:focus, textarea:focus { border-color: var(--primary); outline: none; background: #fff; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; transition: 0.3s; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-export { background: var(--export); margin-top: 20px; width: auto; padding: 12px 25px; }
+
+        /* Report History */
+        .report-item { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; border-left: 6px solid var(--primary); }
+        .report-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
+        .badge { background: #dbeafe; color: var(--primary); padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h2>Digital Fox Engine</h2>
+    <ul id="menu">
+        <li onclick="showSection('planning')" id="nav-planning">Strategic Planning</li>
+        <li onclick="showSection('legal')" id="nav-legal">Legal & Compliance</li>
+        <li onclick="showSection('rnd')" id="nav-rnd">R&D Exploration</li>
+        <li onclick="showSection('design')" id="nav-design">Product Design</li>
+        <li onclick="showSection('funding')" id="nav-funding">Finance & Funding</li>
+        <li onclick="showSection('presentation')" id="nav-presentation">Presentation</li>
+        <hr style="border: 0.5px solid #1e293b; margin: 25px 0;">
+        <li onclick="showSection('reports')" id="nav-reports">📝 Submit Weekly Report</li>
+        <li onclick="showSection('history')" id="nav-history">📊 View History & Export</li>
+    </ul>
+</nav>
+
+<main>
+    <h1 id="section-title">Dashboard</h1>
+    <div id="active-section" class="grid"></div>
+</main>
+
+<script>
+    let startupData = JSON.parse(localStorage.getItem('startupData')) || {
+        planning: { title: "Goals & Planning Rules", members: "", plan: "" },
+        legal: { title: "Legal & Documentation", members: "", plan: "" },
+        rnd: { title: "Research & Development", members: "", plan: "" },
+        design: { title: "Product Design", members: "", plan: "" },
+        funding: { title: "Finance & Funding", members: "", plan: "" },
+        presentation: { title: "Presentation & Pitches", members: "", plan: "" },
+        reports: []
+    };
+
+    function showSection(key) {
+        document.querySelectorAll('nav li').forEach(el => el.classList.remove('active-nav'));
+        document.getElementById('nav-' + key).classList.add('active-nav');
+        const container = document.getElementById('active-section');
+        
+        if(key === 'reports') {
+            document.getElementById('section-title').innerText = "Submit Report";
+            container.innerHTML = `
+                <div class="card" style="grid-column: 1 / -1">
+                    <label>Member Name</label><input type="text" id="rep-name" placeholder="Name">
+                    <label>Workflow Block</label>
+                    <select id="rep-block">
+                        <option>Planning</option><option>Legal</option><option>R&D</option>
+                        <option>Product Design</option><option>Finance</option><option>Presentation</option>
+                    </select>
+                    <label>Summary of Work</label>
+                    <textarea id="rep-text" rows="5" placeholder="Key updates..."></textarea>
+                    <button onclick="saveReport()">Submit Report</button>
+                </div>`;
+            return;
+        }
+
+        if(key === 'history') {
+            document.getElementById('section-title').innerText = "Report History";
+            let historyHTML = startupData.reports.map(r => `
+                <div class="report-item">
+                    <div class="report-meta">
+                        <span><b>${r.name}</b> <span class="badge">${r.block}</span></span>
+                        <span>${r.date}</span>
+                    </div>
+                    <div style="line-height:1.6">${r.content}</div>
+                </div>
+            `).join('') || "<p>No reports found.</p>";
+            
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1">
+                    <button class="btn-export" onclick="downloadCSV()">📥 Download All Reports (CSV)</button>
+                    <div style="margin-top:20px">${historyHTML}</div>
+                </div>`;
+            return;
+        }
+
+        const section = startupData[key];
+        document.getElementById('section-title').innerText = section.title;
+        container.innerHTML = `
+            <div class="card">
+                <label>Team Members</label>
+                <textarea id="members-${key}" rows="3">${section.members}</textarea>
+                <button onclick="saveBlock('${key}')">Save Members</button>
+            </div>
+            <div class="card">
+                <label>Weekly Sprint Goals</label>
+                <textarea id="plan-${key}" rows="8">${section.plan}</textarea>
+                <button onclick="saveBlock('${key}')">Save Plan</button>
+            </div>`;
+    }
+
+    function saveBlock(key) {
+        startupData[key].members = document.getElementById(`members-${key}`).value;
+        startupData[key].plan = document.getElementById(`plan-${key}`).value;
+        localStorage.setItem('startupData', JSON.stringify(startupData));
+        alert("Saved!");
+    }
+
+    function saveReport() {
+        const name = document.getElementById('rep-name').value;
+        const block = document.getElementById('rep-block').value;
+        const content = document.getElementById('rep-text').value;
+        if(!name || !content) return alert("Fill all fields");
+
+        startupData.reports.unshift({ name, block, content, date: new Date().toLocaleString() });
+        localStorage.setItem('startupData', JSON.stringify(startupData));
+        alert("Report Submitted!");
+        showSection('history');
+    }
+
+    function downloadCSV() {
+        if (startupData.reports.length === 0) return alert("No reports to export!");
+        
+        let csvContent = "data:text/csv;charset=utf-8,Date,Member,Block,Report\n";
+        startupData.reports.forEach(r => {
+            let row = `"${r.date}","${r.name}","${r.block}","${r.content.replace(/"/g, '""')}"`;
+            csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "digital_fox_reports.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    showSection('planning');
+</script>
+</body>
+</html>
