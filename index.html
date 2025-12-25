@@ -3,22 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Fox Engine</title>
+    <title>Digital Fox Engine | Cloud Sync</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #0ea5e9; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; }
-        nav { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 20px; position: fixed; }
-        nav h2 { color: #0ea5e9; font-size: 1.2rem; margin-bottom: 30px; }
+        nav { width: 260px; background: #0f172a; color: white; height: 100vh; padding: 20px; position: fixed; box-sizing: border-box; }
+        nav h2 { color: var(--accent); font-size: 1.2rem; margin-bottom: 30px; letter-spacing: 1px; }
         nav ul { list-style: none; padding: 0; }
-        nav li { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
-        .active-nav { background: var(--primary); }
-        main { margin-left: 260px; padding: 40px; width: 100%; }
+        nav li { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
+        nav li:hover { background: rgba(255,255,255,0.1); }
+        .active-nav { background: var(--primary) !important; font-weight: bold; }
+        main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; height: 150px; margin-bottom: 15px; }
-        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; height: 200px; margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical; }
+        button { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        #status-msg { font-size: 0.8rem; color: #64748b; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -26,22 +30,35 @@
 <nav>
     <h2>DIGITAL FOX ENGINE</h2>
     <ul id="menu">
-        <li onclick="showSection('planning')" id="nav-planning">Strategic Planning</li>
-        <li onclick="showSection('legal')" id="nav-legal">Legal & Compliance</li>
-        <li onclick="showSection('rnd')" id="nav-rnd">R&D Exploration</li>
-        <li onclick="showSection('design')" id="nav-design">Product Design</li>
-        <li onclick="showSection('funding')" id="nav-funding">Finance & Funding</li>
-        <li onclick="showSection('presentation')" id="nav-presentation">Presentation</li>
+        <li onclick="changeTab('planning')" id="nav-planning">Strategic Planning</li>
+        <li onclick="changeTab('legal')" id="nav-legal">Legal & Compliance</li>
+        <li onclick="changeTab('rnd')" id="nav-rnd">R&D Exploration</li>
+        <li onclick="changeTab('design')" id="nav-design">Product Design</li>
+        <li onclick="changeTab('funding')" id="nav-funding">Finance & Funding</li>
+        <li onclick="changeTab('presentation')" id="nav-presentation">Presentation</li>
     </ul>
 </nav>
 
 <main>
-    <h1 id="section-title">Loading...</h1>
-    <div id="active-section" class="grid"></div>
+    <div id="status-msg">Checking Cloud Connection...</div>
+    <h1 id="section-title">Strategic Planning</h1>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>TEAM MEMBERS</h3>
+            <textarea id="members-input" placeholder="Enter names..."></textarea>
+            <button id="btn-members" onclick="handleSave('members')">Save Members</button>
+        </div>
+        <div class="card">
+            <h3>WEEKLY SPRINT GOALS</h3>
+            <textarea id="plan-input" placeholder="Enter goals..."></textarea>
+            <button id="btn-plan" onclick="handleSave('plan')">Save Plan</button>
+        </div>
+    </div>
 </main>
 
 <script>
-    // YOUR CONFIG
+    // Your verified Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyCHPE9iOu1DZpKD8JjGK7o1pskZhFeqekM",
         authDomain: "digital-fox-79c5c.firebaseapp.com",
@@ -54,47 +71,75 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    let currentKey = 'planning';
     let startupData = {};
 
-    // Pull from Cloud
-    db.ref('startupData').on('value', (snapshot) => {
-        startupData = snapshot.val() || {
-            planning: { title: "Goals & Planning Rules", members: "", plan: "" },
-            legal: { title: "Legal & Compliance", members: "", plan: "" },
-            rnd: { title: "R&D Exploration", members: "", plan: "" },
-            design: { title: "Product Design", members: "", plan: "" },
-            funding: { title: "Finance & Funding", members: "", plan: "" },
-            presentation: { title: "Presentation", members: "", plan: "" }
+    // Initial Load
+    function changeTab(key) {
+        currentKey = key;
+        document.querySelectorAll('nav li').forEach(el => el.classList.remove('active-nav'));
+        document.getElementById('nav-' + key).classList.add('active-nav');
+        
+        // Update Title
+        const titles = {
+            planning: "Strategic Planning",
+            legal: "Legal & Compliance",
+            rnd: "R&D Exploration",
+            design: "Product Design",
+            funding: "Finance & Funding",
+            presentation: "Presentation"
         };
-        const current = document.querySelector('.active-nav')?.id.split('-')[1] || 'planning';
-        showSection(current);
+        document.getElementById('section-title').innerText = titles[key];
+        
+        // Load data from our local variable (filled by Firebase)
+        loadSectionData();
+    }
+
+    // Pull from Cloud (Listen for changes)
+    db.ref('startupData').on('value', (snapshot) => {
+        startupData = snapshot.val() || {};
+        document.getElementById('status-msg').innerText = "Cloud Synced at " + new Date().toLocaleTimeString();
+        loadSectionData();
     });
 
-    function showSection(key) {
-        document.querySelectorAll('nav li').forEach(el => el.classList.remove('active-nav'));
-        document.getElementById('nav-' + key)?.classList.add('active-nav');
+    function loadSectionData() {
+        const data = startupData[currentKey] || { members: "", plan: "" };
         
-        const section = startupData[key];
-        document.getElementById('section-title').innerText = section.title;
-        
-        document.getElementById('active-section').innerHTML = `
-            <div class="card">
-                <h3>TEAM MEMBERS</h3>
-                <textarea id="m-${key}">${section.members}</textarea>
-                <button onclick="saveData('${key}', 'members')">Save Members</button>
-            </div>
-            <div class="card">
-                <h3>WEEKLY SPRINT GOALS</h3>
-                <textarea id="p-${key}">${section.plan}</textarea>
-                <button onclick="saveData('${key}', 'plan')">Save Plan</button>
-            </div>`;
+        // We only update if the user isn't currently typing (to avoid cursor jumping)
+        if (document.activeElement !== document.getElementById('members-input')) {
+            document.getElementById('members-input').value = data.members || "";
+        }
+        if (document.activeElement !== document.getElementById('plan-input')) {
+            document.getElementById('plan-input').value = data.plan || "";
+        }
     }
 
-    function saveData(key, field) {
-        const val = document.getElementById((field === 'members' ? 'm-' : 'p-') + key).value;
-        db.ref('startupData/' + key + '/' + field).set(val);
-        alert("Synced to Cloud!");
+    function handleSave(field) {
+        const btn = document.getElementById('btn-' + field);
+        const inputId = field === 'members' ? 'members-input' : 'plan-input';
+        const val = document.getElementById(inputId).value;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        db.ref('startupData/' + currentKey + '/' + field).set(val)
+            .then(() => {
+                btn.innerText = "Saved!";
+                setTimeout(() => { 
+                    btn.disabled = false; 
+                    btn.innerText = field === 'members' ? "Save Members" : "Save Plan";
+                }, 1500);
+            })
+            .catch((error) => {
+                alert("Cloud Error: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "Retry Save";
+            });
     }
+
+    // Initialize the first tab
+    changeTab('planning');
 </script>
 </body>
 </html>
