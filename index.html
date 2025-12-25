@@ -6,6 +6,7 @@
     <title>Digital Fox Engine | Cloud Sync</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --accent: #0ea5e9; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; }
@@ -26,6 +27,7 @@
         .btn-reset { background: #dc2626; margin-top: 10px; } 
         .btn-reset:hover { background: #b91c1c; }
         #status-msg { font-size: 0.8rem; color: #64748b; margin-bottom: 20px; }
+        #file-input { display: none; } /* Hidden file input */
     </style>
 </head>
 <body>
@@ -41,7 +43,8 @@
         <li onclick="changeTab('presentation')" id="nav-presentation">Presentation</li>
     </ul>
     
-    <button class="btn-report" onclick="submitWeeklyReport()">📝 Submit Weekly Report</button>
+    <input type="file" id="file-input" accept="application/pdf">
+    <button class="btn-report" onclick="document.getElementById('file-input').click()">📁 Attach & Submit PDF</button>
     
     <button class="btn-reset" onclick="resetAllData()">🗑️ Reset Weekly Data</button>
 </nav>
@@ -80,6 +83,13 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const storage = firebase.storage(); // Initialize Storage
+
+    // Listen for file selection
+    document.getElementById('file-input').onchange = e => {
+        const file = e.target.files[0];
+        if (file) submitWeeklyReport(file);
+    };
 
     function changeTab(key) {
         currentKey = key;
@@ -137,24 +147,36 @@
             });
     }
 
-    // Weekly Report Function including Name and Section
-    function submitWeeklyReport() {
+    // Weekly Report Function with PDF Upload
+    function submitWeeklyReport(file) {
         const userName = prompt("Enter your Name:");
         if (!userName) return;
 
         const sectionName = prompt("Enter the Section (e.g., Design, R&D):");
         if (!sectionName) return;
 
-        const reportData = {
-            submittedBy: userName,
-            section: sectionName,
-            timestamp: new Date().toLocaleString(),
-            dataSnapshot: startupData[currentKey] || "No current section data"
-        };
+        alert("Uploading PDF... Please wait.");
 
-        db.ref('weeklyReports').push(reportData)
-            .then(() => alert("Report for " + sectionName + " submitted successfully!"))
-            .catch(err => alert("Submission failed: " + err.message));
+        // 1. Upload file to Firebase Storage
+        const storageRef = storage.ref(`reports/${Date.now()}_${file.name}`);
+        storageRef.put(file).then(snapshot => {
+            return snapshot.ref.getDownloadURL();
+        }).then(downloadURL => {
+            // 2. Save metadata and URL to Database
+            const reportData = {
+                submittedBy: userName,
+                section: sectionName,
+                timestamp: new Date().toLocaleString(),
+                pdfUrl: downloadURL
+            };
+
+            return db.ref('weeklyReports').push(reportData);
+        }).then(() => {
+            alert("PDF Report for " + sectionName + " submitted successfully!");
+            document.getElementById('file-input').value = ""; // Clear input
+        }).catch(err => {
+            alert("Submission failed: " + err.message);
+        });
     }
 
     function resetAllData() {
